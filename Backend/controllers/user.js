@@ -233,29 +233,24 @@ async function isUser(req, res) {
     if (!req.cookies?.userid) {
       return res.status(401).json({ error: "Not authenticated" });
     }
-
     const userId = req.cookies.userid;
     const user = await User.findOne({ id: userId });
-
     if (!user) {
       return res.status(401).json({ error: "User not found" });
     }
-
-    // Retrieve latest therapy stage from reports
+    // Retrieve latest therapy stage from reports if available
     const reports = await Report.find({ userId })
       .sort({ timestamp: -1 })
       .limit(1);
     const latestTherapyStage =
       reports.length > 0 ? reports[0].conversationStage : user.therapyStage;
-
-    // Update user's therapy stage if necessary
+    // Update if necessary
     if (latestTherapyStage && latestTherapyStage !== user.therapyStage) {
       await User.findOneAndUpdate(
         { id: userId },
         { therapyStage: latestTherapyStage }
       );
     }
-
     res.status(200).json({
       message: "User validated",
       isFirstTimeUser: user.isFirstTimeUser,
@@ -263,10 +258,9 @@ async function isUser(req, res) {
     });
   } catch (error) {
     console.error("Session validation error:", error);
-    res.status(500).json({
-      error: "Session validation failed",
-      details: error.message,
-    });
+    res
+      .status(500)
+      .json({ error: "Session validation failed", details: error.message });
   }
 }
 

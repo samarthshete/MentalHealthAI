@@ -1,12 +1,14 @@
+// Backend/routers/router.js
 const { Router } = require("express");
 const { connectWithChatBot } = require("../controllers/chat.js");
 const {
   doAnalysis,
   getAnalysis,
+  generateSleepAnalysis,
   startTherapeuticJourney,
   startSelfAssessment,
 } = require("../controllers/analysis.js");
-const { userMiddleware } = require("../middlewares/genUserId"); // Corrected path
+const { userMiddleware } = require("../middlewares/getUserId.js"); // Ensure the path & filename match exactly
 const {
   signup,
   login,
@@ -22,8 +24,8 @@ const {
   getMoodData,
   getMoodStats,
   getIntegratedWellbeingAnalysis,
-  generateSleepAnalysis,
-} = require("../controllers/sleepMoodController");
+  generateSleepAnalysis: generateSleepAnalysisFromSleep, // alias if needed
+} = require("../controllers/sleepMoodController.js");
 
 const router = Router();
 

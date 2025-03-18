@@ -1,50 +1,35 @@
-// src/controllers/analysis.js
-
+// Backend/controllers/analysis.js
 const dotenv = require("dotenv");
 dotenv.config();
 const axios = require("axios");
-
-const {
-  startGeminiChat,
-  // startInitialEngagementChat,  // Unused in this file
-  // startAssessmentChat,           // Unused in this file
-  // getGeminiResponse,             // Unused in this file
-} = require("../gemini/chat.js");
-
+const { startGeminiChat } = require("../gemini/chat.js");
 const chatHistModel = require("../models/ChatHist.js");
 const {
   analysisReportPrompt,
   analysisScorePrompt,
   analysisKeywordsPrompt,
   sleepAnalysisPrompt,
-  // initialEngagementPrompt,  // Unused here
-  // selfAssessmentPrompt,     // Unused here
 } = require("../gemini/analysisPrompts.js");
-
 const Report = require("../models/Report.js");
 const User = require("../models/User.js");
 const MoodEntry = require("../models/MoodEntry.js");
 const SleepAssessment = require("../models/SleepAssessment.js");
 
 /**
- * Generates an analysis of sleep data for healthcare professionals
+ * Generates an analysis of sleep data for healthcare professionals.
  */
 const generateSleepAnalysis = async (req, res) => {
   try {
     if (!req.userId) {
       return res.status(401).json({ error: "UserId not found" });
     }
-    const userId = req.userId;
-    const sleepData = await SleepAssessment.find({ userId })
+    const sleepData = await SleepAssessment.find({ userId: req.userId })
       .sort({ createdAt: -1 })
-      .limit(7); // Get last 7 assessments
-
+      .limit(7);
     if (sleepData.length === 0) {
       return res.status(200).json({ message: "No sleep data available" });
     }
-
-    // Convert sleep data into a structured prompt text
-    let sleepHistoryText = sleepData
+    const sleepHistoryText = sleepData
       .map(
         (entry, index) =>
           `Day ${index + 1}: Slept ${entry.sleepHours} hours, Quality: ${
@@ -53,12 +38,11 @@ const generateSleepAnalysis = async (req, res) => {
       )
       .join("\n");
 
-    let chat = startGeminiChat();
-    let result = await chat.sendMessage(
+    const chat = startGeminiChat();
+    const result = await chat.sendMessage(
       sleepAnalysisPrompt + "\n\n" + sleepHistoryText
     );
-    let response = await result.response;
-    let analysis = response.text();
+    const analysis = (await result.response).text();
 
     res.status(200).json({ analysis });
   } catch (error) {
@@ -71,22 +55,19 @@ const generateSleepAnalysis = async (req, res) => {
 };
 
 /**
- * Creates a comprehensive mental health analysis
+ * Creates a comprehensive mental health analysis report.
  */
 const doAnalysis = async (req, res) => {
   try {
     if (!req.userId) {
       return res.status(401).json({ msg: "UserId not found" });
     }
-    const userId = req.userId;
-    const analysis = await genAnalysis(userId);
-
+    const analysis = await genAnalysis(req.userId);
     if (analysis?.info === "nodata") {
       return res.status(200).json({ msg: "nochatdata" });
     }
 
-    // Get sleep data for additional analysis
-    const sleepData = await SleepAssessment.find({ userId })
+    const sleepData = await SleepAssessment.find({ userId: req.userId })
       .sort({ createdAt: -1 })
       .limit(7);
 
@@ -100,18 +81,15 @@ const doAnalysis = async (req, res) => {
             }/5, Mood: ${entry.mood}, Stress Level: ${entry.stressLevel}`
         )
         .join("\n");
-
-      let chat = startGeminiChat();
-      let result = await chat.sendMessage(
+      const chat = startGeminiChat();
+      const result = await chat.sendMessage(
         sleepAnalysisPrompt + "\n\n" + sleepHistoryText
       );
-      let response = await result.response;
-      sleepAnalysisResult = response.text();
+      sleepAnalysisResult = (await result.response).text();
     }
 
-    // Create the report with sleep analysis
     const reportDatas = await Report.create({
-      userId: userId,
+      userId: req.userId,
       keywords: analysis.keywords,
       analysis: analysis.report,
       score: analysis.score,
@@ -119,19 +97,17 @@ const doAnalysis = async (req, res) => {
       conversationStage: "ANALYSIS",
     });
 
-    // Create a mood entry derived from the analysis
     await MoodEntry.create({
-      userId: userId,
-      moodScore: Math.ceil(11 - parseInt(analysis.score, 10)) / 2, // Convert 1-10 scale to 1-5
+      userId: req.userId,
+      moodScore: Math.ceil(11 - parseInt(analysis.score, 10)) / 2,
       energyLevel: Math.ceil(11 - parseInt(analysis.score, 10)) / 2,
       stressLevel: Math.ceil(parseInt(analysis.score, 10)) / 2,
       tags: analysis.keywords.slice(0, 5),
       notes: "Generated from mental health analysis",
     });
 
-    // Optionally send a welcome email with the analysis details
     try {
-      const user = await User.findOne({ id: userId });
+      const user = await User.findOne({ id: req.userId });
       if (user && user.email) {
         axios.post("https://mindmate-email-api.onrender.com/welcomeEmail", {
           emailId: user.email,
@@ -153,50 +129,36 @@ const doAnalysis = async (req, res) => {
 };
 
 /**
- * Generates mental health analysis from chat history
+ * Generates mental health analysis based on chat history.
  */
-const genAnalysis = async (userId) => {
+const getAnalysis = async (userId) => {
   try {
     if (!userId) {
       throw new Error("User ID is required");
     }
-
     const foundHist = await chatHistModel
-      .find({ userId: userId })
+      .find({ userId })
       .sort({ timestamp: 1 });
     if (foundHist.length === 0) {
       return { info: "nodata" };
     }
-
     let foundHistForGemini = [];
     for (let conv of foundHist) {
-      foundHistForGemini.push({
-        role: "user",
-        parts: [{ text: conv.prompt }],
-      });
+      foundHistForGemini.push({ role: "user", parts: [{ text: conv.prompt }] });
       foundHistForGemini.push({
         role: "model",
         parts: [{ text: conv.response }],
       });
     }
-
-    // Generate report
     let chat = startGeminiChat(foundHistForGemini);
     let result = await chat.sendMessage(analysisReportPrompt);
-    let response = await result.response;
-    let report = response.text();
-
-    // Generate score
+    let report = (await result.response).text();
     chat = startGeminiChat(foundHistForGemini);
     result = await chat.sendMessage(analysisScorePrompt);
-    response = await result.response;
-    const score = response.text().replace(/\D/g, ""); // Extract numeric value
-
-    // Generate keywords
+    const score = (await result.response).text().replace(/\D/g, "");
     chat = startGeminiChat(foundHistForGemini);
     result = await chat.sendMessage(analysisKeywordsPrompt);
-    response = await result.response;
-    const keywordsResp = response.text();
+    const keywordsResp = (await result.response).text();
     const keywords = keywordsResp
       .replace(/[^a-zA-Z0-9 \n]/g, "")
       .trim()
@@ -208,7 +170,6 @@ const genAnalysis = async (userId) => {
           kw.toLowerCase() !== "keyword" &&
           kw.toLowerCase() !== "keywords"
       );
-
     return { report, score, keywords };
   } catch (error) {
     console.error("Error in genAnalysis:", error);
@@ -217,46 +178,14 @@ const genAnalysis = async (userId) => {
 };
 
 /**
- * Retrieves previous analysis reports along with mood trend data
- */
-const getAnalysis = async (req, res) => {
-  try {
-    if (!req.userId) {
-      return res.status(401).json({ msg: "UserId not found" });
-    }
-    const userId = req.userId;
-
-    const reports = await Report.find({ userId: userId }).sort({
-      timestamp: -1,
-    });
-    const moodData = await MoodEntry.find({ userId: userId })
-      .sort({ timestamp: -1 })
-      .limit(30);
-
-    res.status(200).json({
-      data: reports,
-      moodData: moodData,
-    });
-  } catch (error) {
-    console.error("Error in getAnalysis:", error);
-    res.status(500).json({ msg: "Internal Server Error" });
-  }
-};
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-/**
- * Initiates the therapeutic journey with a welcome message
+ * Initiates the therapeutic journey with a welcome message.
  */
 const startTherapeuticJourney = async (req, res) => {
   try {
     if (!req.userId) {
       return res.status(401).json({ error: "UserId not found" });
     }
-    const userId = req.userId;
-    const chatHistory = await chatHistModel.find({ userId });
-
-    // Use the initial engagement prompt to generate a welcome message
+    const chatHistory = await chatHistModel.find({ userId: req.userId });
     let chat = startGeminiChat(
       [],
       "INITIAL_ENGAGEMENT",
@@ -265,27 +194,21 @@ const startTherapeuticJourney = async (req, res) => {
     let result = await chat.sendMessage(
       "Generate a warm, empathetic welcome message for a healthcare professional beginning their mental health journey. Acknowledge the unique stresses they face."
     );
-    let response = await result.response;
-    let welcomeMessage = response.text();
-
-    // Record this engagement in chat history
+    let welcomeMessage = (await result.response).text();
     await chatHistModel.create({
-      userId: userId,
+      userId: req.userId,
       prompt: "User started a new therapeutic session",
       response: welcomeMessage,
       conversationStage: "INITIAL_ENGAGEMENT",
     });
-
-    // Update user's therapy stage if they have an account
     try {
       await User.findOneAndUpdate(
-        { id: userId },
+        { id: req.userId },
         { therapyStage: "INITIAL_ENGAGEMENT" }
       );
     } catch (error) {
       console.log("User record update error:", error.message);
     }
-
     res.status(200).json({
       message: welcomeMessage,
       isFirstTimeUser: chatHistory.length === 0,
@@ -301,11 +224,13 @@ const startTherapeuticJourney = async (req, res) => {
 };
 
 /**
- * Helper function: Sends a Gemini message with exponential backoff on 429 errors
+ * Helper: Sends a Gemini message with exponential backoff on 429 errors.
  */
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const sendGeminiMessageWithRetry = async (chat, prompt, maxRetries = 3) => {
   let attempt = 0;
-  let delay = 1000; // start with 1 second
+  let delay = 1000;
   while (attempt < maxRetries) {
     try {
       const result = await chat.sendMessage(prompt);
@@ -318,7 +243,7 @@ const sendGeminiMessageWithRetry = async (chat, prompt, maxRetries = 3) => {
           `429 Too Many Requests: retrying in ${delay}ms (attempt ${attempt})`
         );
         await sleep(delay);
-        delay *= 2; // exponential backoff
+        delay *= 2;
       } else {
         throw error;
       }
@@ -328,15 +253,12 @@ const sendGeminiMessageWithRetry = async (chat, prompt, maxRetries = 3) => {
 };
 
 /**
- * Starts the self-assessment process with structured questions
+ * Starts the self-assessment process with structured questions.
  */
 const startSelfAssessment = async (req, res) => {
   try {
     if (!req.userId) return res.status(401).json({ error: "UserId not found" });
-    const userId = req.userId;
     let chat = startGeminiChat([], "ASSESSMENT");
-
-    // Use exponential backoff for the Gemini API call
     let assessmentQuestion;
     try {
       assessmentQuestion = await sendGeminiMessageWithRetry(
@@ -345,41 +267,34 @@ const startSelfAssessment = async (req, res) => {
       );
     } catch (error) {
       console.error("Error generating assessment question:", error);
-      // Fallback: Provide a default assessment question if the Gemini API fails
       assessmentQuestion =
         "How have you been feeling emotionally during and after your recent work shifts?";
     }
-
-    // Record the assessment question in chat history
     await chatHistModel.create({
-      userId: userId,
+      userId: req.userId,
       prompt: "Starting self-assessment",
       response: assessmentQuestion,
       conversationStage: "ASSESSMENT",
     });
-
     try {
       await User.findOneAndUpdate(
-        { id: userId },
+        { id: req.userId },
         { therapyStage: "ASSESSMENT" }
       );
     } catch (error) {
       console.log("User record update error:", error.message);
     }
-
     res.status(200).json({ message: assessmentQuestion, step: "ASSESSMENT" });
   } catch (error) {
     console.error("Error starting self assessment:", error);
-    res.status(500).json({
-      message: "Error generating assessment",
-      error: error.message,
-    });
+    res
+      .status(500)
+      .json({ message: "Error generating assessment", error: error.message });
   }
 };
 
-// Export all functions for use in router
 module.exports = {
-  genAnalysis,
+  getAnalysis,
   doAnalysis,
   getAnalysis,
   generateSleepAnalysis,

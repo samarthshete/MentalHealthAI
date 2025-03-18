@@ -1,12 +1,12 @@
+// Backend/index.js
 const dotenv = require("dotenv");
+dotenv.config();
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const router = require("./routers/router.js");
 const connectDB = require("./db/connect.js");
 const { setupGeminiChat } = require("./gemini/chat.js");
-
-dotenv.config();
 
 const app = express();
 
@@ -18,7 +18,7 @@ app.use(
   })
 );
 
-// Parse URL-encoded data and JSON, and cookies
+// Parse URL-encoded data, JSON, and cookies
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(cookieParser());
@@ -30,17 +30,17 @@ const initServer = async () => {
   try {
     const port = process.env.SERVER_PORT || 8000;
     await connectDB();
-    console.log("DB Connected");
+    console.log("✅ MongoDB Connected");
 
-    // Initialize Gemini chat functionality
+    // Initialize Gemini AI model
     await setupGeminiChat();
 
     app.listen(port, () => {
-      console.log(`Backend Server Started on ${port} ...`);
+      console.log(`Backend Server Started on port ${port}...`);
     });
   } catch (err) {
-    console.error(err.message);
-    console.log("Server not started!");
+    console.error("Error initializing server:", err.message);
+    process.exit(1);
   }
 };
 
