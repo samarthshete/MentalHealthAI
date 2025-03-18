@@ -1,7 +1,12 @@
 const { Router } = require("express");
 const { connectWithChatBot } = require("../controllers/chat.js");
-const { doAnalysis, getAnalysis } = require("../controllers/analysis.js");
-const { userMiddleware } = require("../middlewares/genUserId.js");
+const {
+  doAnalysis,
+  getAnalysis,
+  startTherapeuticJourney,
+  startSelfAssessment,
+} = require("../controllers/analysis.js");
+const { userMiddleware } = require("../middlewares/genUserId"); // Corrected path
 const {
   signup,
   login,
@@ -9,18 +14,56 @@ const {
   logout,
   signinwithGoogle,
 } = require("../controllers/user.js");
+const {
+  saveSleepAssessment,
+  getSleepData,
+  getSleepAssessment,
+  saveMoodEntry,
+  getMoodData,
+  getMoodStats,
+  getIntegratedWellbeingAnalysis,
+  generateSleepAnalysis,
+} = require("../controllers/sleepMoodController");
 
 const router = Router();
-router.route("/cron").get((req, res) => {
+
+// System and health check route
+router.get("/cron", (req, res) => {
   res.status(200).json({ message: "hello" });
 });
-router.route("/chat").get(userMiddleware, connectWithChatBot);
-router.route("/analysis").get(userMiddleware, doAnalysis);
-router.route("/fetchanalysis").get(userMiddleware, getAnalysis);
-router.route("/signup").post(signup);
-router.route("/signupWithGoogle").post(signinwithGoogle);
-router.route("/login").post(login);
-router.route("/isUser").get(isUser);
-router.route("/logout").get(logout);
+
+// Chat and analysis routes
+// router.get("/chat", userMiddleware, connectWithChatBot);
+router.get("/analysis", userMiddleware, doAnalysis);
+router.get("/fetchanalysis", userMiddleware, getAnalysis);
+
+// Therapeutic journey routes
+router.get("/therapy/start", userMiddleware, startTherapeuticJourney);
+router.get("/therapy/assessment", userMiddleware, startSelfAssessment);
+
+// Authentication routes
+router.post("/signup", signup);
+router.post("/signupWithGoogle", signinwithGoogle);
+router.post("/login", login);
+router.get("/isUser", isUser);
+router.get("/logout", logout);
+
+// Sleep assessment routes
+router.post("/sleep", userMiddleware, saveSleepAssessment);
+router.get("/sleep/data", userMiddleware, getSleepData);
+router.get("/sleep/:userId", userMiddleware, getSleepAssessment);
+router.get("/sleep/analysis", userMiddleware, generateSleepAnalysis);
+
+// Mood tracking routes
+router.post("/mood", userMiddleware, saveMoodEntry);
+router.get("/mood/data", userMiddleware, getMoodData);
+router.get("/mood/stats", userMiddleware, getMoodStats);
+
+// Integrated wellbeing analysis
+router.get(
+  "/wellbeing/integrated",
+  userMiddleware,
+  getIntegratedWellbeingAnalysis
+);
 
 module.exports = router;

@@ -1,27 +1,32 @@
 const mongoose = require("mongoose");
 
-const Schema = mongoose.Schema;
-
-const reportSchema = new mongoose.Schema({
-  userId: {
-    type: String,
-    required: true,
-  },
-  score: {
-    type: Number,
-  },
-  keywords: [
-    {
+const reportSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: String,
+      required: true,
+      index: true,
+    },
+    keywords: {
+      type: [String],
+      default: [],
+    },
+    analysis: {
       type: String,
     },
-  ],
-  analysis: {
-    type: String,
+    score: {
+      type: String, // Consider using Number if you plan to perform numeric operations
+    },
+    sleepAnalysis: {
+      type: String,
+    },
+    conversationStage: {
+      type: String,
+    },
   },
-  timestamp: {
-    type: Date,
-    default: () => Date.now(),
-  },
-});
+  {
+    timestamps: true, // Adds createdAt and updatedAt fields
+  }
+);
 
 module.exports = mongoose.model("Report", reportSchema);

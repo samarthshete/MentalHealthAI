@@ -1,21 +1,17 @@
-// Import the functions you need from the SDKs you need
+// src/firebase/firebase.js
+
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import {
   getAuth,
   signInWithPopup,
   GoogleAuthProvider,
-  getAdditionalUserInfo,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
 } from "firebase/auth";
 import axios from "axios";
 
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// Your web app's Firebase configuration using environment variables
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
   authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
@@ -26,56 +22,61 @@ const firebaseConfig = {
   measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase
-// console.log(firebaseConfig)
+// Initialize Firebase and Analytics
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 
+// Set up Google authentication provider and get auth instance
 const provider = new GoogleAuthProvider();
 const auth = getAuth();
 
+// Function to sign in with Google
 async function LoginWithGoogle() {
+  // Optionally set the auth language (here set to Italian)
   auth.languageCode = "it";
 
   try {
     const data = await signInWithPopup(auth, provider);
     const credential = GoogleAuthProvider.credentialFromResult(data);
     const token = credential.accessToken;
-    console.log(credential);
+    console.log("Google Credential:", credential);
     const user = data.user;
-    console.log(user);
-    //  //from here we will send data to backend to store the email
-    // const info = getAdditionalUserInfo(data).isNewUser; //If this is true we will send the mail along with uid of firebase and uuid of chat
-    //  // If this is false we will just user the access token...
-      const headers = {
-        token: "Bearer " + user.accessToken,
-      };
-      console.log(headers);
+    console.log("Firebase User:", user);
 
-      const signup = await axios.post(
-        process.env.REACT_APP_API_LINK + "/signupWithGoogle",
-        {},
-        { headers, withCredentials: true }
-      );
-  
+    // Prepare headers to send user data to your backend
+    const headers = {
+      token: "Bearer " + user.accessToken,
+    };
+    console.log("Request Headers:", headers);
+
+    // Send a request to your backend for signup/login with Google
+    await axios.post(
+      process.env.REACT_APP_API_LINK + "/signupWithGoogle",
+      {},
+      { headers, withCredentials: true }
+    );
+
     return true;
   } catch (error) {
-    console.log(error.message);
+    console.error("Google Login Error:", error.message);
     return false;
   }
 }
 
+// Function to sign in with email and password
 async function LoginWithEmail(email, password) {
   try {
     const result = await signInWithEmailAndPassword(auth, email, password);
-    const credential = result.user;
-    console.log(credential);
+    const user = result.user;
+    console.log("Email Login User:", user);
+    return user;
   } catch (error) {
-    console.log(error.message);
-    throw error; // Re-throw the error so it can be caught in the calling function
+    console.error("Email Login Error:", error.message);
+    throw error; // Re-throw error for handling in the calling function
   }
 }
 
+// Function to sign up with email and password
 async function SignupWithEmail(email, password) {
   try {
     const result = await createUserWithEmailAndPassword(auth, email, password);
@@ -83,22 +84,18 @@ async function SignupWithEmail(email, password) {
     const headers = {
       token: "Bearer " + user.accessToken,
     };
-    console.log(headers);
+    console.log("Signup User Headers:", headers);
 
-    // One vulnerability here
-    // If signup fails, you might want to handle it appropriately (e.g., show an error message to the user)
+    // Send signup data to your backend
     await axios.post(
       process.env.REACT_APP_API_LINK + "/signup",
       {},
-      {
-        headers,
-        withCredentials: true,
-      }
+      { headers, withCredentials: true }
     );
+    return user;
   } catch (error) {
-    // Handle signup error (e.g., display an error message to the user)
-    console.error(error);
-    throw error; // Re-throw the error so it can be caught in the calling function
+    console.error("Email Signup Error:", error.message);
+    throw error; // Re-throw error for handling in the calling function
   }
 }
 

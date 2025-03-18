@@ -59,6 +59,7 @@ export default function AboutPage() {
               className={style.mainVideo}
               controls
               src="https://www.youtube.com/embed/fUD5HcZhtQI?si=GwQPNzqdOjFZ8kXG"
+              title="Main Video"
             ></iframe>
             <img
               className={`${style.dotsImg} image-block`}

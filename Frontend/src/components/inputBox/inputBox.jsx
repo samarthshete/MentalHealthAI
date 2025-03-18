@@ -13,20 +13,19 @@ function InputBox({
 }) {
   return (
     <div className={styles.inputContainer}>
-      <label>
+      <label htmlFor={name}>
         <p>{label}</p>
-        <input
-          type={type}
-          disabled={disabled}
-          placeholder={placeholder}
-          value={value}
-          onChange={(e) => {
-            handleChange(e, name);
-          }}
-          style={style}
-        />
-        {error && <p className={styles.error}>*{error}</p>}
       </label>
+      <input
+        id={name}
+        type={type}
+        disabled={disabled}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => handleChange(e, name)}
+        style={style}
+      />
+      {error && <p className={styles.error}>*{error}</p>}
     </div>
   );
 }

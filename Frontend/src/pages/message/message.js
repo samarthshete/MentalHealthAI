@@ -26,94 +26,90 @@ function Message() {
   const [chatState, setChatState] = useState("busy");
   const [chatInit, setChatInit] = useState(false);
   const [message, setMessage] = useState("");
-  let ws = useRef(null);
+  const ws = useRef(null);
 
+  // Scroll to bottom whenever chat updates
   useEffect(() => {
     if (mainRef.current) {
-      const container = mainRef.current;
-      container.scrollTop = container.scrollHeight;
+      mainRef.current.scrollTop = mainRef.current.scrollHeight;
     }
   }, [chat]);
+
+  // Fetch initial chat data (chatId)
   useEffect(() => {
     async function fetchData() {
       try {
-        const data = await axios.get(process.env.REACT_APP_API_LINK + "/chat", {
-          withCredentials: true,
-        });
-        setChatId(data.data.chatId);
-        console.log(data);
+        const { data } = await axios.get(
+          `${process.env.REACT_APP_API_LINK}/chat`,
+          { withCredentials: true }
+        );
+        setChatId(data.chatId);
+        console.log("Chat Data:", data);
       } catch (error) {
-        console.log("Error Fetching Data");
+        console.log("Error Fetching Data:", error);
       }
     }
     fetchData();
   }, []);
+
+  // Establish WebSocket connection once chatId is available
   useEffect(() => {
     if (chatId !== null) {
-      //make a websocket connection here
-      let wss = new WebSocket(`${process.env.REACT_APP_WS_LINK}?id=${chatId}`);
+      const wss = new WebSocket(
+        `${process.env.REACT_APP_WS_LINK}?id=${chatId}`
+      );
+      ws.current = wss; // Set reference immediately
+
       wss.addEventListener("open", () => {
-        console.log("Websocket connected");
+        console.log("WebSocket connected");
+        // Send initial messages on connection
         ws.current.send(JSON.stringify({ type: "client:connected" }));
         ws.current.send(JSON.stringify({ type: "client:chathist" }));
       });
+
       wss.addEventListener("message", (event) => {
-        // console.log(event.data);
         const data = JSON.parse(event.data);
 
         if (data?.type === "server:chathist") {
-          // console.log(data.data);
-          const histdata = data?.data;
+          const histdata = data.data;
           if (!histdata) return;
 
-          for (let conv of histdata) {
+          // Append conversation history messages
+          histdata.forEach((conv) => {
             if (conv.prompt) {
-              setChat((prevchat) => [
-                ...prevchat,
-                { message: conv.prompt, own: true },
-              ]);
+              setChat((prev) => [...prev, { message: conv.prompt, own: true }]);
             }
             if (conv.response) {
-              setChat((prevchat) => [
-                ...prevchat,
+              setChat((prev) => [
+                ...prev,
                 { message: conv.response, own: false },
               ]);
             }
-          }
+          });
 
           setChatState("idle");
           setChatInit(true);
-          // promptBut.disabled = false;
-        } else if (data?.type === "server:response:start") {
-          // setChat((prevchat) => [
-          //   ...prevchat,
-          //   { message: "", own: false, isLoading: true },
-          // ]);
         } else if (data?.type === "server:response:chunk") {
-          setChat((prevchat) => {
-            // prevchat.at(-1).message += data.chunk;
-            // console.log("!!!", prevchat);
-            // console.log("!!!", prevchat.slice(-1));
+          // Update the latest bot message with new chunk data
+          setChat((prev) => {
+            const lastMessage = prev.at(-1);
             return [
-              ...prevchat.slice(0, -1),
+              ...prev.slice(0, -1),
               {
-                message: `${prevchat.at(prevchat.length - 1).message}${
-                  data.chunk
-                }`,
+                message: `${lastMessage.message}${data.chunk}`,
                 own: false,
                 isLoading: true,
               },
             ];
           });
-          // console.log("@text", data.chunk);
         } else if (data?.type === "server:response:end") {
-          // response = "";
-          // promptBut.disabled = false;
-          setChat((prevchat) => {
+          // Mark the bot's message as complete
+          setChat((prev) => {
+            const lastMessage = prev.at(-1);
             return [
-              ...prevchat.slice(0, -1),
+              ...prev.slice(0, -1),
               {
-                message: prevchat.at(prevchat.length - 1).message,
+                message: lastMessage.message,
                 own: false,
                 isLoading: false,
               },
@@ -122,13 +118,13 @@ function Message() {
           setChatState("idle");
         }
       });
-      ws.current = wss;
     }
   }, [chatId]);
 
+  // Handle sending a message
   const handleClick = () => {
-    setChat((prevchat) => [...prevchat, { message, own: true }]);
-    console.log(message);
+    // Append user's message
+    setChat((prev) => [...prev, { message, own: true }]);
     ws.current?.send(
       JSON.stringify({
         type: "client:prompt",
@@ -137,26 +133,23 @@ function Message() {
     );
     setMessage("");
     setChatState("busy");
-    setChat((prevchat) => [
-      ...prevchat,
-      { message: "", own: false, isLoading: true },
-    ]);
+    // Append placeholder for bot's response (to be updated via WebSocket)
+    setChat((prev) => [...prev, { message: "", own: false, isLoading: true }]);
   };
 
+  // Logout functionality
   const logoutUser = async () => {
     try {
       const { data } = await axios.get(
-        process.env.REACT_APP_API_LINK + "/logout",
-        {
-          withCredentials: true,
-        }
+        `${process.env.REACT_APP_API_LINK}/logout`,
+        { withCredentials: true }
       );
-      console.log(data);
+      console.log("Logout Data:", data);
       if (data?.msg === "loggedout") {
         logout();
       }
     } catch (error) {
-      console.log("Err in logout");
+      console.log("Error during logout:", error);
     }
   };
 
@@ -165,9 +158,8 @@ function Message() {
       <header>
         <div
           className={styles.logoContainer}
-          onClick={() => {
-            navigate("/");
-          }}
+          onClick={() => navigate("/")}
+          style={{ cursor: "pointer" }}
         >
           <Logo />
           <div className={styles.headerText}>
@@ -175,25 +167,19 @@ function Message() {
             <h6>A mental health chat assistance</h6>
           </div>
         </div>
-
         <div className="flex flex-row gap-4">
           <button
             onClick={() => {
               if (!loggedIn) navigate("/login");
-              else {
-                navigate("/analysis");
-              }
+              else navigate("/analysis");
             }}
           >
             Analyse
           </button>
-
           <button
             onClick={() => {
               if (!loggedIn) navigate("/login");
-              else {
-                logoutUser();
-              }
+              else logoutUser();
             }}
           >
             {!loggedIn ? <LuLogIn /> : <LuLogOut />}
@@ -225,22 +211,20 @@ function Message() {
           </div>
         )}
         {chatInit &&
-          chat &&
-          chat.map((x, i) => {
-            return (
-              <Chat
-                text={x.message}
-                own={x.own}
-                key={i}
-                isLoading={x.isLoading ? true : false}
-              />
-            );
-          })}
+          chat.map((x, i) => (
+            <Chat
+              text={x.message}
+              own={x.own}
+              key={i}
+              isLoading={x.isLoading || false}
+            />
+          ))}
       </main>
       <footer>
         <form
           onSubmit={(e) => {
             e.preventDefault();
+            handleClick();
           }}
         >
           <input
@@ -248,13 +232,7 @@ function Message() {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
           />
-          <button
-            type="submit"
-            onClick={() => {
-              handleClick();
-            }}
-            disabled={chatState === "busy" ? true : false}
-          >
+          <button type="submit" disabled={chatState === "busy"}>
             <span className="material-symbols-outlined">send</span>
           </button>
         </form>

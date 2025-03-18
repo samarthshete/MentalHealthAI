@@ -1,115 +1,185 @@
+// src/controllers/chat.js
+
 const dotenv = require("dotenv");
-const { v4: uuid } = require("uuid");
-const WebSocket = require("ws");
-const querystring = require("querystring");
 dotenv.config();
-const { startGeminiChat } = require("../gemini/chat.js");
-const chatHistModel = require("../models/ChatHist.js");
+const { initHist } = require("../gemini/initHist.js");
+const {
+  initialEngagementPrompt,
+  selfAssessmentPrompt,
+  analysisInsightsPrompt,
+  interventionsPrompt,
+  professionalHelpPrompt,
+} = require("../gemini/analysisPrompts.js");
 
-const connectWithChatBot = async (req, res) => {
-  try {
-    if (req.userId === undefined) {
-      // through err
-      return;
-    }
-    const foundHist = await chatHistModel
-      .find({ userId: req.userId })
-      .sort({ timestamp: 1 });
+const {
+  GoogleGenerativeAI,
+  HarmCategory,
+  HarmBlockThreshold,
+} = require("@google/generative-ai");
 
-    // console.log(foundHist);
+const MODEL_NAME = "gemini-1.5-pro";
+const API_KEY = String(process.env.GEMINI_KEY);
 
-    let foundHistForGemini = [];
-    for (let conv of foundHist) {
-      foundHistForGemini.push({
-        role: "user",
-        parts: [
-          {
-            text: conv.prompt,
-          },
-        ],
-      });
-      foundHistForGemini.push({
-        role: "model",
-        parts: [
-          {
-            text: conv.response,
-          },
-        ],
-      });
-    }
-    // console.log(foundHistForGemini[0]);
-
-    const roomId = uuid();
-    const websocketserverLink = `${String(
-      process.env.WEBSOCKET_SERVER
-    )}?${querystring.stringify({
-      id: roomId,
-      // serverkey: process.env.WEBSOCKET_SERVER_KEY,
-      isServer: true,
-    })}`;
-
-    const wss = new WebSocket(websocketserverLink);
-    wss.on("open", () => {
-      // console.log("opn");
-      res.status(200).json({ chatId: roomId });
-      wss.send(JSON.stringify({ type: "server:connected" }));
-    });
-
-    // Get history from mongo
-    const chat = startGeminiChat(foundHistForGemini);
-
-    wss.on("message", async (data) => {
-      try {
-        data = JSON.parse(data.toString());
-
-        if (data?.type === "client:chathist") {
-          wss.send(
-            JSON.stringify({ type: "server:chathist", data: foundHist })
-          );
-        } else if (data?.type === "client:prompt") {
-          if (data.prompt === undefined) {
-            // throw err
-            return;
-          }
-
-          // Prompt by the user sent to gemini
-          const result = await chat.sendMessageStream(data.prompt);
-          let respText = "";
-          wss.send(JSON.stringify({ type: "server:response:start" }));
-
-          for await (const chunk of result.stream) {
-            const chunkText = chunk.text();
-
-            wss.send(
-              JSON.stringify({
-                type: "server:response:chunk",
-                chunk: chunkText,
-              })
-            );
-            respText += chunkText;
-          }
-          wss.send(JSON.stringify({ type: "server:response:end" }));
-          // should be stored in the db
-          await chatHistModel.create({
-            userId: req.userId,
-            prompt: data.prompt,
-            response: respText,
-          });
-        }
-      } catch (error) {
-        console.log(error);
-      }
-    });
-    wss.on("close", () => {
-      // console.log("cls");
-    });
-    wss.on("error", (error) => {
-      console.error("WebSocket Error:", error.message);
-      res.sendStatus(404);
-    });
-  } catch (error) {
-    console.error(error);
-    res.sendStatus(404);
-  }
+// Stage-specific configuration for optimized responses
+const conversationModes = {
+  INITIAL_ENGAGEMENT: {
+    temperature: 0.9, // Higher temperature for warmth and empathy
+    maxOutputTokens: 1024,
+  },
+  ASSESSMENT: {
+    temperature: 0.5, // Lower temperature for structured questioning
+    maxOutputTokens: 1024,
+  },
+  ANALYSIS: {
+    temperature: 0.3, // Lower for precise analysis
+    maxOutputTokens: 2048,
+  },
+  INTERVENTIONS: {
+    temperature: 0.7, // Balanced for creative yet practical solutions
+    maxOutputTokens: 2048,
+  },
+  PROFESSIONAL_HELP: {
+    temperature: 0.4, // Lower for responsible referrals
+    maxOutputTokens: 1536,
+  },
+  DEFAULT: {
+    temperature: 0.9,
+    topK: 1,
+    topP: 1,
+    maxOutputTokens: 2048,
+  },
 };
-module.exports = { connectWithChatBot };
+
+const safetySettings = [
+  {
+    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+    threshold: HarmBlockThreshold.BLOCK_NONE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+    threshold: HarmBlockThreshold.BLOCK_NONE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+    threshold: HarmBlockThreshold.BLOCK_NONE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+    threshold: HarmBlockThreshold.BLOCK_NONE,
+  },
+];
+
+let geminiModel;
+
+const setupGeminiChat = async () => {
+  const genAI = new GoogleGenerativeAI(API_KEY);
+  geminiModel = genAI.getGenerativeModel({ model: MODEL_NAME });
+};
+
+/**
+ * Enhanced chat starter with therapeutic stage support
+ * @param {Array} history - Previous chat messages
+ * @param {String} stage - Conversation stage (optional)
+ * @param {Boolean} isFirstTimeUser - Whether this is a new user
+ * @returns {Object} Configured Gemini chat session
+ */
+const startGeminiChat = (
+  history = [],
+  stage = null,
+  isFirstTimeUser = false
+) => {
+  const conversationStage = stage || detectConversationStage(history);
+  const config =
+    conversationModes[conversationStage] || conversationModes.DEFAULT;
+
+  const generationConfig = {
+    temperature: config.temperature,
+    topK: config.topK || 1,
+    topP: config.topP || 1,
+    maxOutputTokens: config.maxOutputTokens,
+  };
+
+  let chatHistory = [...initHist];
+
+  // Add stage-specific system prompt if needed
+  if (isFirstTimeUser && conversationStage === "INITIAL_ENGAGEMENT") {
+    chatHistory.push({
+      role: "user",
+      parts: [{ text: initialEngagementPrompt }],
+    });
+    chatHistory.push({
+      role: "model",
+      parts: [{ text: "I'll create a warm, empathetic first interaction." }],
+    });
+  } else if (conversationStage === "ASSESSMENT" && history.length === 0) {
+    chatHistory.push({
+      role: "user",
+      parts: [{ text: selfAssessmentPrompt }],
+    });
+    chatHistory.push({
+      role: "model",
+      parts: [{ text: "I'll guide them through the assessment steps." }],
+    });
+  }
+
+  // Add user history
+  chatHistory = [...chatHistory, ...history];
+
+  return geminiModel.startChat({
+    generationConfig,
+    safetySettings,
+    history: chatHistory,
+  });
+};
+
+/**
+ * Detects the current conversation stage based on message history
+ * @param {Array} history - Chat history
+ * @returns {String} Identified conversation stage
+ */
+const detectConversationStage = (history = []) => {
+  if (!history.length) return "INITIAL_ENGAGEMENT";
+
+  const userMessages = history.filter((msg) => msg.role === "user");
+  const messageCount = userMessages.length;
+
+  // Stage detection based on conversation length
+  if (messageCount <= 2) return "INITIAL_ENGAGEMENT";
+  if (messageCount <= 5) return "ASSESSMENT";
+  if (messageCount <= 7) return "ANALYSIS";
+  if (messageCount <= 10) return "INTERVENTIONS";
+  return "PROFESSIONAL_HELP";
+};
+
+// Specialized therapeutic stage chat starters
+const startInitialEngagementChat = (history = []) => {
+  return startGeminiChat(history, "INITIAL_ENGAGEMENT", true);
+};
+
+const startAssessmentChat = (history = []) => {
+  return startGeminiChat(history, "ASSESSMENT");
+};
+
+const startAnalysisInsightsChat = (history = []) => {
+  return startGeminiChat(history, "ANALYSIS");
+};
+
+const startInterventionsChat = (history = []) => {
+  return startGeminiChat(history, "INTERVENTIONS");
+};
+
+const startProfessionalHelpChat = (history = []) => {
+  return startGeminiChat(history, "PROFESSIONAL_HELP");
+};
+
+module.exports = {
+  setupGeminiChat,
+  geminiModel,
+  startGeminiChat,
+  startInitialEngagementChat,
+  startAssessmentChat,
+  startAnalysisInsightsChat,
+  startInterventionsChat,
+  startProfessionalHelpChat,
+  detectConversationStage,
+};

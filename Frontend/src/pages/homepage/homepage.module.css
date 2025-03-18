@@ -68,7 +68,7 @@
   transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.leftSection .chatWithUs:hover{
+.leftSection .chatWithUs:hover {
   cursor: pointer;
   background-color: #fbbf4e; /* Change background color on hover */
   box-shadow: 0px 4px 12px 0 rgba(0, 0, 0, 0.3); /* Change box shadow on hover */
@@ -80,13 +80,13 @@
 }
 
 @keyframes blink-cursor-animation {
-  0%{
+  0% {
     opacity: 1;
   }
-  50%{
+  50% {
     opacity: 0;
   }
-  100%{
+  100% {
     opacity: 1;
   }
 }
@@ -117,7 +117,60 @@
   box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px,
     rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;
 }
+.aboutUs {
+  background-image: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+  color: white;
+  padding: 50px;
+  margin: auto;
+  width: 80%;
+  border-radius: 15px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
 
+.aboutUs:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+}
+
+.aboutUs > div {
+  text-align: justify;
+  line-height: 1.8;
+}
+
+.aboutUs h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  color: #fff;
+}
+
+.aboutUs a {
+  color: #fccb5e;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.aboutUs a:hover {
+  color: #ffdd99;
+}
+
+/* Stats Box */
+.statsBox {
+  background-image: linear-gradient(
+    135deg,
+    rgba(75, 75, 75, 0.2) 0%,
+    rgba(29, 29, 29, 0.3) 100%
+  );
+  padding: 50px;
+  margin: auto;
+  margin-top: 50px;
+  width: 80%;
+  border-radius: 15px;
+  box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px,
+    rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;
+}
 .aboutUs > div {
   text-align: justify;
 }

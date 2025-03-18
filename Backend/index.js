@@ -17,29 +17,31 @@ app.use(
     exposedHeaders: ["set-cookie", "token"],
   })
 );
-// parse form data
+
+// Parse URL-encoded data and JSON, and cookies
 app.use(express.urlencoded({ extended: false }));
-// parse json
 app.use(express.json());
-// parse cookie
 app.use(cookieParser());
 
+// Use API routes from the router
 app.use(router);
 
 const initServer = async () => {
   try {
-    const port = String(process.env.SERVER_PORT) || 8000;
+    const port = process.env.SERVER_PORT || 8000;
     await connectDB();
     console.log("DB Connected");
-    // init gemini
+
+    // Initialize Gemini chat functionality
     await setupGeminiChat();
 
     app.listen(port, () => {
       console.log(`Backend Server Started on ${port} ...`);
     });
   } catch (err) {
-    console.log(err.message);
+    console.error(err.message);
     console.log("Server not started!");
   }
 };
+
 initServer();

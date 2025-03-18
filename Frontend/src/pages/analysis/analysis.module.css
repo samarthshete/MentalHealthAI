@@ -1,34 +1,33 @@
 @import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600&display=swap");
+
 .analysisContainer {
-  /* background: linear-gradient(135deg, #abdcff 0%, #0396ff 100%); */
-  /* background-image: linear-gradient(120deg, #e0c3fc 0%, #8ec5fc 100%); */
-  /* background-image: linear-gradient(to top, #d299c2 0%, #fef9d7 100%); */
-  /* background-image: linear-gradient(to top, #fddb92 0%, #d1fdff 100%); */
-  /* background-image: linear-gradient(135deg, #c2ffd8 10%, #465efb 100%); */
-  /* background-image: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); */
-  /* background-image: linear-gradient(135deg, #fdfcfb 0%, #e2d1c3 100%); */
-  /* background-image: linear-gradient(to top, #d5d4d0 0%, #d5d4d0 1%, #eeeeec 31%, #efeeec 75%, #e9e9e7 100%); */
   background: radial-gradient(
       at top left,
-      rgba(255, 191, 0, 0.1) 10%,
+      rgba(70, 130, 180, 0.1) 10%,
       transparent 50%,
-      rgba(30, 0, 49, 0.2) 100%
+      rgba(30, 45, 80, 0.15) 100%
     ),
-    linear-gradient(-180deg, rgb(214, 205, 217) 10%, #929ead 98%);
-
+    linear-gradient(-180deg, rgb(240, 244, 247) 10%, #e0e6ed 98%);
   background-attachment: fixed;
   min-height: 100vh;
   display: grid;
   grid-template-rows: auto 1fr;
   font-family: "Poppins", sans-serif;
+  color: #333;
 }
 
+/* Header styles */
 .analysisContainer .logoContainer {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
   align-items: center;
   font-family: "Poppins", sans-serif;
   font-weight: 500;
+  transition: transform 0.2s ease;
+}
+
+.analysisContainer .logoContainer:hover {
+  transform: scale(1.02);
 }
 
 .analysisContainer header {
@@ -36,61 +35,173 @@
   align-items: center;
   justify-content: space-between;
   padding: 1.5rem 5.5rem;
+  background-color: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .analysisContainer > header button {
   font-size: 16px;
   padding: 0.6em 1.2em;
-  border: 2px solid rgba(0, 0, 0, 0.5);
+  border: 2px solid rgba(66, 153, 225, 0.5);
   border-radius: 8px;
   background-color: transparent;
+  color: #4299e1;
   cursor: pointer;
   transition: all 0.3s;
+  font-weight: 500;
 }
 
 .analysisContainer > header button:hover {
-  box-shadow: 0 0 10px 0 rgb(0, 0, 0, 0.2);
-  background-color: rgba(255, 255, 255, 0.5);
+  background-color: rgba(66, 153, 225, 0.1);
+  border-color: #4299e1;
+  transform: translateY(-1px);
 }
 
+.analysisContainer > header button:active {
+  transform: translateY(1px);
+}
+
+/* Main content area */
 .analysisContainer main {
-  width: 60%;
-  margin: auto;
+  width: 70%;
+  margin: 2rem auto;
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  align-items: center;
-  /* word-break: break-all; */
+  gap: 1.5rem;
   word-wrap: break-word;
-  padding-bottom: 50px;
+  padding-bottom: 3rem;
 }
+
 .analysisContainer main section {
   width: 100%;
 }
 
-.analysisContainer main .chartCont {
-  background-color: rgba(255, 255, 255, 0.8);
-
-  border-radius: 8px;
-  padding: 10px;
-  box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px,
-    rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;
-
-  text-align: center;
+/* Therapeutic journey progress */
+.journeyProgress {
+  background-color: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
+.journeyProgress h3 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #2d3748;
+  font-size: 1.25rem;
+}
+
+.progressSteps {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  margin: 0 auto;
+  max-width: 90%;
+}
+
+.progressSteps::before {
+  content: "";
+  position: absolute;
+  top: 25px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: #e2e8f0;
+  z-index: 1;
+}
+
+.journeyStep {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+}
+
+.stepIcon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: #edf2f7;
+  color: #a0aec0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  margin-bottom: 0.75rem;
+  border: 2px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.stepLabel {
+  font-size: 0.8rem;
+  color: #718096;
+  text-align: center;
+  max-width: 80px;
+}
+
+.completedStep .stepIcon {
+  background-color: #4299e1;
+  color: white;
+  border-color: #3182ce;
+}
+
+.completedStep .stepLabel {
+  color: #4299e1;
+  font-weight: 500;
+}
+
+/* Charts and data visualization */
+.analysisContainer main .chartCont {
+  background-color: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.analysisContainer main .chartCont:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+}
+
+.analysisContainer main .chartCont h2 {
+  margin-top: 1rem;
+  color: #2d3748;
+  font-size: 1.5rem;
+}
+
+/* Burnout radar chart */
+.burnoutRadar {
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 1rem;
+  border-left: 4px solid #805ad5;
+}
+
+.burnoutRadar h3 {
+  color: #6b46c1;
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+}
+
+/* Control buttons */
 .analysisContainer .butCont {
   display: flex;
   flex-direction: row-reverse;
   justify-content: space-between;
+  margin: 1rem 0;
 }
 
 .analysisContainer .fetchNewBut {
   background-image: linear-gradient(
     92.88deg,
-    #455eb5 9.16%,
-    #5643cc 43.89%,
-    #673fd7 64.72%
+    #4299e1 9.16%,
+    #3182ce 43.89%,
+    #2b6cb0 64.72%
   );
   border-radius: 8px;
   border-style: none;
@@ -100,100 +211,103 @@
   flex-shrink: 0;
   font-size: 16px;
   font-weight: 500;
-  padding: 10px 15px;
+  padding: 12px 20px;
   text-align: center;
-  text-shadow: rgba(0, 0, 0, 0.25) 0 3px 8px;
-  transition: all 0.5s;
+  transition: all 0.3s;
   user-select: none;
   -webkit-user-select: none;
   touch-action: manipulation;
 }
 
 .analysisContainer .fetchNewBut:hover {
-  box-shadow: rgba(45, 22, 218, 0.6) 0 1px 15px;
-  transition-duration: 0.1s;
+  box-shadow: rgba(66, 153, 225, 0.5) 0 5px 15px;
+  transform: translateY(-2px);
+}
+
+.analysisContainer .fetchNewBut:active {
+  transform: translateY(0);
 }
 
 .analysisContainer .fetchNewBut:disabled {
-  opacity: 0.9;
-  color: rgba(200, 200, 200, 0.8);
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .analysisContainer .backBut {
-  background-color: black;
+  background-color: #718096;
   border-radius: 8px;
   border-style: none;
-  box-sizing: border-box;
   color: #ffffff;
   cursor: pointer;
-  flex-shrink: 0;
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 500;
-  padding: 8px 12px;
+  padding: 12px 20px;
   text-align: center;
-  text-shadow: rgba(0, 0, 0, 0.25) 0 3px 8px;
-  transition: all 0.5s;
-  user-select: none;
-  -webkit-user-select: none;
-  touch-action: manipulation;
+  transition: all 0.3s;
 }
 
 .analysisContainer .backBut:hover {
-  box-shadow: rgba(49, 49, 49, 0.7) 0 1px 15px;
-  transition-duration: 0.1s;
+  background-color: #4a5568;
+  transform: translateY(-2px);
 }
 
+.analysisContainer .backBut:active {
+  transform: translateY(0);
+}
+
+/* Analysis list */
 .analysisContainer .analList {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 1rem;
 }
+
 .analysisContainer .analItem {
-  background-color: rgba(255, 255, 255, 0.8);
-
-  border-radius: 8px;
-  border-style: none;
-  box-sizing: border-box;
-
+  background-color: white;
+  border-radius: 12px;
+  border-left: 4px solid transparent;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  font-style: italic;
-
-  padding: 10px 15px;
+  padding: 1rem 1.5rem;
   cursor: pointer;
-  box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px,
-    rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
   transition: all 0.3s;
 }
 
-.analysisContainer .newAnalItem {
-  text-shadow: 0 0 5px purple;
-}
-
 .analysisContainer .analItem:hover {
-  background-color: white;
-  box-shadow: rgba(60, 64, 67, 0.5) 0px 1px 2px 0px,
-    rgba(60, 64, 67, 0.25) 0px 2px 6px 2px;
+  background-color: #f7fafc;
+  border-left-color: #4299e1;
+  transform: translateX(3px);
 }
 
+.analysisContainer .newAnalItem {
+  border-left-color: #4299e1;
+  background-color: rgba(66, 153, 225, 0.05);
+}
+
+/* Stage indicator */
+.stageIndicator {
+  display: inline-block;
+  background-color: #ebf8ff;
+  color: #3182ce;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  margin-right: 0.5rem;
+}
+
+/* Analysis details */
 .analysisContainer .analDetails {
-  background-color: rgba(255, 255, 255, 0.8);
-
-  border-radius: 8px;
-  border-style: none;
-  box-sizing: border-box;
-
+  background-color: white;
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
-  align-items: right;
-
-  padding: 15px;
-  gap: 25px;
-
-  box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px,
-    rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;
+  padding: 2rem;
+  gap: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
 .analysisContainer .analDetailsTop {
@@ -202,95 +316,305 @@
   justify-content: space-between;
   align-items: flex-start;
 }
+
 .analysisContainer .analDetails .analDetailsTimestamp {
-  background-color: #0000002c;
-  border-radius: 100px;
-  padding: 5px 15px 4px 15px;
-  line-height: 20px;
+  background-color: #edf2f7;
+  border-radius: 20px;
+  padding: 0.5rem 1rem;
   font-style: italic;
+  font-size: 0.9rem;
+  color: #4a5568;
 }
 
 .analysisContainer .analDetails .analDetailsScore {
-  background-color: white;
   border-radius: 10px;
-  min-width: 40px;
-  font-size: 18px;
-  padding: 5px 15px 4px 15px;
+  min-width: 60px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
   text-align: center;
-  box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px,
-    rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .analysisContainer .analDetails .analDetailsReport {
-  line-height: 30px;
+  line-height: 1.8;
 }
 
-.analysisContainer .analDetails .analDetailsKeywords {
+.analysisContainer .analDetails .analDetailsReport h3 {
+  color: #2d3748;
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0.5rem;
 }
 
-.analysisContainer .analDetails .analDetailsKeywords span {
+/* Sleep analysis section */
+.analysisContainer .analDetailsSleep {
+  background-color: #f0f9ff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: -1rem;
+  border-left: 4px solid #3182ce;
+}
+
+.analysisContainer .analDetailsSleep h3 {
+  color: #2b6cb0;
+  margin-bottom: 1rem;
+}
+
+/* Interventions section */
+.analysisContainer .analDetailsInterventions {
+  background-color: #f0fff4;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: -1rem;
+  border-left: 4px solid #38a169;
+}
+
+.analysisContainer .analDetailsInterventions h3 {
+  color: #2f855a;
+  margin-bottom: 1rem;
+}
+
+/* Professional help section */
+.analysisContainer .analDetailsProfessionalHelp {
+  background-color: #fff5f5;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: -1rem;
+  border-left: 4px solid #e53e3e;
+}
+
+.analysisContainer .analDetailsProfessionalHelp h3 {
+  color: #c53030;
+  margin-bottom: 1rem;
+}
+
+/* Keywords */
+.analysisContainer .analDetailsKeywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.analysisContainer .analDetailsKeywords span {
   display: inline-block;
-  background-color: rgb(84, 35, 56);
-  padding: 5px 15px 4px 15px;
-  border-radius: 50px;
+  background-color: #4a5568;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
   color: white;
-  margin: 7px;
-  box-shadow: rgba(60, 64, 67, 0.2) 0px 1px 2px 0px,
-    rgba(60, 64, 67, 0.1) 0px 2px 6px 2px;
+  font-size: 0.9rem;
+  transition: all 0.2s;
 }
 
-@media only screen and (max-width: 1200px) {
-  .analysisContainer main {
-    width: 80%;
-  }
+.analysisContainer .analDetailsKeywords span:hover {
+  background-color: #2d3748;
+  transform: translateY(-2px);
 }
 
-@media only screen and (max-width: 850px) {
+/* Tab navigation */
+.tabsContainer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  border-radius: 50px;
+  background-color: white;
+  padding: 0.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
 }
 
-@media only screen and (max-width: 800px) {
-  .analysisContainer .analDetailsTop {
-    flex-direction: column;
-    gap: 15px;
-  }
+.tabButton {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: #718096;
+  position: relative;
+  border-radius: 50px;
+  transition: all 0.3s;
+  font-weight: 500;
 }
 
-@media only screen and (max-width: 650px) {
-  .analysisContainer header {
-    padding: 1rem 3rem;
-  }
-
-  .analysisContainer main {
-    width: 100%;
-  }
-  .analysisContainer main section {
-    width: calc(100% - 20px * 2);
-  }
+.tabButton:hover {
+  color: #4299e1;
 }
 
-@media only screen and (max-width: 500px) {
-  .analysisContainer header {
-    padding: 1rem 1rem;
-  }
+.activeTab {
+  color: white;
+  background-color: #4299e1;
+  font-weight: 600;
 }
 
-/*---- loader ----*/
+.activeTab:hover {
+  color: white;
+}
+
+/* No data messages */
+.noDataMessage {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #718096;
+  background-color: white;
+  border-radius: 12px;
+  margin: 1.5rem 0;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  border: 2px dashed #e2e8f0;
+}
+
+/* Action buttons */
+.actionButton {
+  display: block;
+  width: 100%;
+  max-width: 250px;
+  margin: 1.5rem auto;
+  padding: 1rem 1.5rem;
+  background-color: #4299e1;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.3s;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.actionButton:hover {
+  background-color: #3182ce;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.actionButton:active {
+  transform: translateY(0);
+}
+
+/* Work impact tab */
+.workImpactContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.shiftTable {
+  overflow-x: auto;
+}
+
+.shiftTable table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.shiftTable th {
+  background-color: #f7fafc;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #4a5568;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.shiftTable td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.shiftTable tr:last-child td {
+  border-bottom: none;
+}
+
+.shiftTable tr:hover td {
+  background-color: #f7fafc;
+}
+
+.workRecommendations {
+  background-color: #f0f9ff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border-left: 4px solid #3182ce;
+}
+
+.workRecommendations h3 {
+  color: #2b6cb0;
+  margin-bottom: 1rem;
+}
+
+.workRecommendations ul {
+  padding-left: 1.5rem;
+}
+
+.workRecommendations li {
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
+}
+
+.workRecommendations strong {
+  color: #2d3748;
+}
+
+/* Next steps container */
+.nextStepsContainer {
+  background-color: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.nextStepsContainer h3 {
+  color: #2d3748;
+  margin-bottom: 1.5rem;
+}
+
+.journeyActions {
+  display: flex;
+  justify-content: center;
+}
+
+.journeyButton {
+  display: inline-block;
+  padding: 1rem 1.5rem;
+  background-color: #4299e1;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.journeyButton:hover {
+  background-color: #3182ce;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Loading animation */
 .lds-ripple {
   display: inline-block;
   position: relative;
   width: 80px;
   height: 80px;
 }
+
 .lds-ripple div {
   position: absolute;
-  border: 4px solid #fff;
+  border: 4px solid #4299e1;
   opacity: 1;
   border-radius: 50%;
   animation: lds-ripple 1s cubic-bezier(0, 0.2, 0.8, 1) infinite;
 }
+
 .lds-ripple div:nth-child(2) {
   animation-delay: -0.5s;
 }
+
 @keyframes lds-ripple {
   0% {
     top: 36px;
@@ -321,10 +645,66 @@
     opacity: 0;
   }
 }
-/*----------------------------*/
+
+/* Responsive styles */
+@media only screen and (max-width: 1200px) {
+  .analysisContainer main {
+    width: 85%;
+  }
+}
 
 @media only screen and (max-width: 800px) {
+  .analysisContainer .analDetailsTop {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
   .headerText {
     display: none;
+  }
+
+  .tabButton {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .stepLabel {
+    display: none;
+  }
+}
+
+@media only screen and (max-width: 650px) {
+  .analysisContainer header {
+    padding: 1rem 1.5rem;
+  }
+
+  .analysisContainer main {
+    width: 90%;
+  }
+
+  .journeyProgress {
+    padding: 1rem;
+  }
+
+  .analysisContainer .analDetails {
+    padding: 1.5rem;
+    gap: 1.5rem;
+  }
+}
+
+@media only screen and (max-width: 500px) {
+  .analysisContainer header {
+    padding: 1rem;
+  }
+
+  .tabsContainer {
+    flex-wrap: wrap;
+  }
+
+  .tabButton {
+    flex: 1 0 40%;
+    font-size: 0.8rem;
+    text-align: center;
+    margin: 0.25rem;
   }
 }
